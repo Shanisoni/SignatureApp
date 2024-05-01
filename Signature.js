@@ -1,86 +1,131 @@
-let history = [];
+ // JavaScript code for additional functionalities
+ let history = [];
+ const canvas = document.getElementById('myCanvas');
+ const ctx = canvas.getContext('2d');
 
-const colorPicker = document.getElementById('colorPicker');
-const canvasColor = document.getElementById('canvasColor');
-const canvas = document.getElementById('myCanvas');
-const undoButton = document.getElementById('undoButton');
-const clearButton = document.getElementById('clearButton');
-const saveButton = document.getElementById('saveButton');
-const fontPicker = document.getElementById('fontPicker');
-const textInput = document.getElementById('textInput');
-const fontSizePicker = document.getElementById('fontSizePicker'); // add new element
+ // Initialize drawing properties
+ let isDrawing = false;
+ let lastX = 0;
+ let lastY = 0;
 
+ // Function to draw on the canvas
+ function draw(event) {
+     if (!isDrawing) return;
+     ctx.beginPath();
+     ctx.moveTo(lastX, lastY);
+     ctx.lineTo(event.offsetX, event.offsetY);
+     ctx.stroke();
+     lastX = event.offsetX;
+     lastY = event.offsetY;
+ }
 
-const ctx = canvas.getContext('2d');
+ // Event listeners for mouse actions
+ canvas.addEventListener('mousedown', (event) => {
+     isDrawing = true;
+     lastX = event.offsetX;
+     lastY = event.offsetY;
+     draw(event);
+ });
 
-colorPicker.addEventListener('change', (event) => {
-    ctx.fillStyle = event.target.value;
-    ctx.strokeStyle = event.target.value;
-});
+ canvas.addEventListener('mousemove', draw);
 
-canvasColor.addEventListener('change', (event) => {
-    ctx.fillStyle = event.target.value;
-    ctx.fillRect(0, 0, 800, 500);
-});
+ canvas.addEventListener('mouseup', () => {
+     isDrawing = false;
+ });
 
-canvas.addEventListener('mousedown', (event) => {
-    isDrawing = true;
-    lastX = event.offsetX;
-    lastY = event.offsetY;
-});
+ canvas.addEventListener('mouseout', () => {
+     isDrawing = false;
+ });
 
-canvas.addEventListener('mousemove', (event) => {
-    if (isDrawing) {
-        ctx.beginPath();
-        ctx.moveTo(lastX, lastY);
-        ctx.lineTo(event.offsetX, event.offsetY);
-        ctx.stroke();
+ canvas.addEventListener('contextmenu', (event) => {
+     event.preventDefault();
+ });
 
-        lastX = event.offsetX;
-        lastY = event.offsetY;
-    }
-});
+ // Function to clear the canvas
+ function clearCanvas() {
+     ctx.clearRect(0, 0, canvas.width, canvas.height);
+ }
 
-canvas.addEventListener('contextmenu', (event) => {
-    event.preventDefault();
-});
+ // Event listener for the clear button
+ document.getElementById('clearButton').addEventListener('click', clearCanvas);
 
-canvas.addEventListener('mouseup', () => {
-    isDrawing = false;
-});
+ // Function to undo the last drawing action
+ function undo() {
+     history.pop(); // Remove the last drawn path from history
+     clearCanvas(); // Clear the canvas
+     history.forEach(path => ctx.stroke(path)); // Redraw all remaining paths
+ }
 
-fontSizePicker.addEventListener('change', (event) => {
-    ctx.lineWidth = event.target.value;
-    // ctx.font = `${fontPicker.value} ${event.target.value}px`;
-});
+ // Event listener for the undo button
+ document.getElementById('undoButton').addEventListener('click', undo);
 
-clearButton.addEventListener('click', () => {
-    // Clear the canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-})
+ // Function to save the canvas as an image
+ function saveCanvas() {
+     let link = document.createElement('a');
+     link.download = 'my-canvas.png';
+     link.href = canvas.toDataURL();
+     link.click();
+ }
 
-// Add event listener for the save button
-saveButton.addEventListener('click', () => {
-    localStorage.setItem('canvasContents', canvas.toDataURL());
-    // Create a new <a> element
-    let link = document.createElement('a');
+ // Event listener for the save button
+ document.getElementById('saveButton').addEventListener('click', saveCanvas);
 
-    // Set the download attribute and the href attribute of the <a> element
-    link.download = 'my-canvas.png';
-    link.href = canvas.toDataURL();
+ // Function to retrieve a saved signature
+ function retrieveSignature() {
+     let savedCanvas = localStorage.getItem('canvasContents');
+     if (savedCanvas) {
+         let img = new Image();
+         img.src = savedCanvas;
+         img.onload = () => {
+             ctx.drawImage(img, 0, 0);
+         };
+     }
+ }
 
-    // Dispatch a click event on the <a> element
-    link.click();
-});
+ // Event listener for the retrieve button
+ document.getElementById('retrieveButton').addEventListener('click', retrieveSignature);
 
-// Add event listener for the retrieve button
-retrieveButton.addEventListener('click', () => {
-    // Retrieve the saved canvas contents from local storage
-    let savedCanvas = localStorage.getItem('canvasContents');
+ // Function to change the color of the drawing tool
+ function changeColor(event) {
+     ctx.strokeStyle = event.target.value;
+     ctx.fillStyle = event.target.value;
+ }
 
-    if (savedCanvas) {
-        let img = new Image();
-        img.src = savedCanvas;
-        ctx.drawImage(img, 0, 0);
-    }
-});
+ // Event listener for the color picker
+ document.getElementById('colorPicker').addEventListener('change', changeColor);
+
+ // Function to change the line width
+ function changeLineWidth(event) {
+     ctx.lineWidth = event.target.value;
+ }
+
+ // Event listener for the line width slider
+ document.getElementById('lineWidthSlider').addEventListener('input', changeLineWidth);
+
+ // Function to change the font size
+ function changeFontSize(event) {
+     ctx.font = `${event.target.value}px ${fontPicker.value}`;
+ }
+
+ // Event listener for the font size picker
+ document.getElementById('fontSizePicker').addEventListener('change', changeFontSize);
+
+ // Function to add dynamic buttons
+ function addDynamicButton(text, clickHandler) {
+     const button = document.createElement('button');
+     button.textContent = text;
+     button.className = 'btn btn-secondary'; // Bootstrap button styling
+     button.addEventListener('click', clickHandler);
+     document.querySelector('.bottom').appendChild(button);
+ }
+
+ // Add dynamic buttons
+ addDynamicButton('Clear Text', () => {
+     ctx.clearRect(0, 0, canvas.width, canvas.height);
+ });
+
+ addDynamicButton('Change Background', () => {
+     const canvasColor = document.getElementById('canvasColor').value;
+     ctx.fillStyle = canvasColor;
+     ctx.fillRect(0, 0, canvas.width, canvas.height);
+ });
